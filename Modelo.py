@@ -66,7 +66,7 @@ def crear_features(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Creando features adicionales")
     df = df.copy()
     # Edad del modelo
-    df['age_model'] = 2024 - df['Year']
+    #df['age_model'] = 2024 - df['Year']
     # Indicador lujo (percentil 75)
     df['is_luxury'] = (df['Price_USD'] > df['Price_USD'].quantile(0.75)).astype(int)
 
@@ -91,7 +91,7 @@ def crear_features(df: pd.DataFrame) -> pd.DataFrame:
             return "Otro"
 
     df['Segmento'] = df['Model'].apply(clasificar_segmento)
-    logger.info("Features creados: age_model, is_luxury, Segmento")
+    logger.info("Features creados: is_luxury, Segmento")
     return df
 
 def entrenar_kmeans_and_save(df: pd.DataFrame, cluster_features, n_clusters=8):
@@ -222,7 +222,7 @@ def main(args):
     # Preparar variables para el modelo predictivo
     target_col = 'Sales_Volume'
     # Seleccionar variables base (ajustar según disponibilidad)
-    numeric_features = ['Year', 'Engine_Size_L', 'Mileage_KM', 'Price_USD', 'age_model']
+    numeric_features = ['Year', 'Engine_Size_L', 'Mileage_KM', 'Price_USD']
     categorical_features = ['Region', 'Color', 'Fuel_Type', 'Transmission', 'Segmento', 'Cluster', 'is_luxury']
 
     # Asegurarse de que categóricas no contengan nan
