@@ -41,7 +41,7 @@ Los datos fueron limpiados, escalados y codificados:
 
 ---
 
-### 1.4. Posibles Cambios con Respecto a la Primera Entrega
+### 1.4. Cambios con Respecto a la Primera Entrega
 
 En comparación con la primera entrega (`entrega_1.ipynb`), se introdujeron **mejoras sustanciales**:
 
@@ -197,8 +197,6 @@ Accuracy: 99.39%
 | :---------- | :------------------ | :------------------------------------------------------------- | :------ |
 | **John**      | Líder técnico       | Ingeniería de características, modelos de regresión, MLflow, EC2. | **5**  |
 | **Felipe**      | Analista técnico       | Ingeniería de características, modelos de regresión, MLflow, EC2. | **3**  |
-
-llenar el resto
 
 
 
