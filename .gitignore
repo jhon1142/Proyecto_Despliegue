@@ -1,0 +1,20 @@
+
+# MLflow
+mlruns/
+
+# Archivos generados por scripts
+*.csv
+*.png
+reporte.txt
+predic.csv
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.pyc
+
+# DVC
+.dvc/cache
+.DS_Store

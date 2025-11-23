@@ -65,7 +65,6 @@ app.layout = html.Div([
 )
 def predecir(n_clicks, modelo, region, combustible, transmision, color):
     if n_clicks > 0:
-        # Valores inventados de predicción
         clases = ['Alta venta', 'Baja venta']
         prediccion = random.choice(clases)
         # Probabilidades simuladas (sumen 1)
