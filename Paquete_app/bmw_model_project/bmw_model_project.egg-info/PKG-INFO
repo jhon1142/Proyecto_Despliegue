@@ -1,0 +1,21 @@
+Metadata-Version: 2.4
+Name: bmw-model-project
+Version: 0.1.0
+Summary: Pipeline reproducible para modelado y despliegue de predicción de ventas BMW (2010–2024)
+Home-page: https://github.com/jhon1142/Proyecto_Despliegue
+Author: Jhon Rios
+License: MIT
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Intended Audience :: Science/Research
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: pandas
+Requires-Dist: numpy
+Requires-Dist: scikit-learn
+Requires-Dist: xgboost
+Requires-Dist: mlflow
+Requires-Dist: joblib
+Requires-Dist: cloudpickle

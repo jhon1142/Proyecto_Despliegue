@@ -1,0 +1,3 @@
+[console_scripts]
+modelo-bmw-predict = bmw_model_project.predict:main
+modelo-bmw-train = bmw_model_project.train_pipeline:main
