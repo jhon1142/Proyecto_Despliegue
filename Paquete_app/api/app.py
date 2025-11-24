@@ -62,42 +62,22 @@ app.layout = html.Div([
     # --- Gráfica ---
     dcc.Graph(id="scatter-pred-vs-true"),
 
-    # --- Desplegable para seleccionar una columna ---
-    html.H3("Selecciona la columna que quieres visualizar"),
-
-    dcc.Dropdown(
-        id="column-selector",
-        options=[{"label": col, "value": col} for col in df.columns],
-        value=df.columns[0],
-        clearable=False
-),
-
-    html.Br(),
-
-    html.Div(id="column-display")
-
-])
-
-# ---------------------- CALLBACKS ----------------------
-
-@app.callback(  
-    [Output("scatter-pred-vs-true", "figure"),
-     Output("table-predictions", "data")],
-    [Input("feature-selector", "value")]
-    
-@app.callback(
-    Output("column-display", "children"),
-    Input("column-selector", "value")
-    )
-    def update_selected_column(col):
-    return dash_table.DataTable(
-        columns=[{"name": col, "id": col}],
-        data=df[[col]].to_dict("records"),
+    # --- Tabla ---
+    dash_table.DataTable(
+        id="table-predictions",
+        columns=[{"name": i, "id": i} for i in df.columns],
         page_size=10,
         style_table={"overflowX": "auto"},
         style_cell={"textAlign": "left"}
     )
+])
 
+# ---------------------- CALLBACKS ----------------------
+
+@app.callback(
+    [Output("scatter-pred-vs-true", "figure"),
+     Output("table-predictions", "data")],
+    [Input("feature-selector", "value")]
 )
 def update_predictions(selected_features):
 
@@ -129,3 +109,4 @@ def update_predictions(selected_features):
 
 if __name__ == "__main__":
     app.run_server(debug=True)
+
