@@ -1,111 +1,74 @@
-from fastapi import FastAPI
-from typing import List, Optional, Any
+import json
 import joblib
 import pandas as pd
-from arbol import asection, aprint
-from pydantic import BaseModel
+from pathlib import Path
 
-# Importar tu paquete BMW ya instalado
-from bmw_model_project import pipeline, config
+import dash
+from dash import dcc, html, dash_table
+from dash.dependencies import Input, Output
 
-app = FastAPI(title="BMW Sales Prediction API")
+import plotly.express as px
 
-# -------------------------
-# Versiones
-# -------------------------
-API_VERSION = "1.0.0"
-MODEL_VERSION = "0.1.0"
+from bmw_model_project import config
 
-# -------------------------
-# Cargar modelo entrenado
-# -------------------------
-MODEL_PATH = config.TRAINED_DIR / "best_model.joblib"
-model = joblib.load(MODEL_PATH)
-aprint(f"✅ Modelo cargado desde: {MODEL_PATH}")
+# Cargar modelo y métricas
+best_model_path = config.TRAINED_DIR / "best_model.joblib"
+best_model = joblib.load(best_model_path)
 
-# -------------------------
-# Pydantic Models
-# -------------------------
-class Health(BaseModel):
-    name: str
-    api_version: str
-    model_version: str
+with open(config.TRAINED_DIR / "best_model_metadata.json") as f:
+    metrics = json.load(f)
 
-class PredictionResults(BaseModel):
-    errors: Optional[Any]
-    version: str
-    predictions: Optional[List[float]]
+# Cargar dataset
+df = pd.read_csv(config.DATA_URL, encoding="utf-8")
 
-class DataInputSchema(BaseModel):
-    Year: int
-    Engine_Size_L: float
-    Mileage_KM: float
-    Price_USD: float
-    Region: str
-    Color: str
-    Fuel_Type: str
-    Transmission: str
-    Model: str
+# Si tienes funciones para generar features y clustering:
+from bmw_model_project.pipeline import create_features, perform_clustering
+df = create_features(df)
+df = perform_clustering(df)
 
-class MultipleDataInputs(BaseModel):
-    inputs: List[DataInputSchema]
+# Predicciones con el mejor modelo
+numeric_features = ["Year", "Engine_Size_L", "Mileage_KM", "Price_USD", "age_model"]
+categorical_features = ["Region", "Color", "Fuel_Type", "Transmission", "Segmento", "Cluster", "is_luxury"]
+X = df[numeric_features + categorical_features]
+y_true = df["Sales_Volume"].values
+y_pred = best_model.predict(X)
+df["Predicted_Sales"] = y_pred
 
-    class Config:
-        schema_extra = {
-            "example": {
-                "inputs": [
-                    {
-                        "Year": 2020,
-                        "Engine_Size_L": 2.0,
-                        "Mileage_KM": 15000,
-                        "Price_USD": 45000,
-                        "Region": "Europe",
-                        "Color": "Black",
-                        "Fuel_Type": "Petrol",
-                        "Transmission": "Automatic",
-                        "Model": "X5"
-                    }
-                ]
-            }
-        }
+# Inicializar app
+app = dash.Dash(__name__)
+app.title = "Dashboard BMW Model"
 
-# -------------------------
-# Endpoints
-# -------------------------
-@app.get("/health", response_model=Health)
-def health_check():
-    """Endpoint de health check de la API."""
-    return Health(
-        name="BMW Sales Prediction API",
-        api_version=API_VERSION,
-        model_version=MODEL_VERSION
+app.layout = html.Div([
+    html.H1("Dashboard Resultados Modelo BMW"),
+    
+    html.Div([
+        html.H3("Mejor modelo:"),
+        html.P(f"{metrics['best_model']}"),
+        html.H4("Métricas:"),
+        html.Ul([
+            html.Li(f"R2: {metrics['r2']:.4f}"),
+            html.Li(f"MSE: {metrics['mse']:.2f}")
+        ])
+    ], style={"margin-bottom": "30px"}),
+
+    html.H3("Predicciones vs Reales"),
+    dcc.Graph(
+        id="scatter-pred-vs-true",
+        figure=px.scatter(df, x="Sales_Volume", y="Predicted_Sales", 
+                          labels={"Sales_Volume": "Ventas Reales", "Predicted_Sales": "Predicciones"},
+                          title="Predicciones vs Ventas Reales")
+    ),
+
+    html.H3("Tabla de predicciones"),
+    dash_table.DataTable(
+        id="table-predictions",
+        columns=[{"name": i, "id": i} for i in df.columns],
+        data=df.to_dict("records"),
+        page_size=10,
+        style_table={"overflowX": "auto"},
+        style_cell={"textAlign": "left"}
     )
+])
 
-@app.post("/predict", response_model=PredictionResults)
-def predict(data: MultipleDataInputs):
-    """
-    Endpoint para predicciones múltiples usando el modelo empaquetado.
-    """
-    try:
-        with asection("Inicio predicción"):
-            # Convertir lista de inputs a DataFrame
-            df = pd.DataFrame([d.dict() for d in data.inputs])
-            aprint(f"Datos recibidos:\n{df.head()}")
-
-            # Generar features y clusters usando funciones de tu paquete
-            df = pipeline.create_features(df)
-            df = pipeline.perform_clustering(df)
-
-            # Columnas que usa el modelo
-            numeric_features = ["Year", "Engine_Size_L", "Mileage_KM", "Price_USD", "age_model"]
-            categorical_features = ["Region", "Color", "Fuel_Type", "Transmission", "Segmento", "Cluster", "is_luxury"]
-            X = df[numeric_features + categorical_features]
-
-            preds = model.predict(X).tolist()
-            aprint(f"Predicciones generadas: {preds}")
-
-        return PredictionResults(errors=None, version=MODEL_VERSION, predictions=preds)
-
-    except Exception as e:
-        aprint(f"❌ Error en predicción: {e}")
-        return PredictionResults(errors=str(e), version=MODEL_VERSION, predictions=None)
+if __name__ == "__main__":
+    app.run_server(debug=True)
