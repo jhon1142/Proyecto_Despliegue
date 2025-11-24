@@ -205,4 +205,4 @@ def make_prediction(n_clicks, year, engine, mileage, price, age,
 # 6. Ejecutar servidor
 # ================================
 if __name__ == "__main__":
-    app.run_server(host="0.0.0.0", port=8050, debug=True)
+    app.run(host="0.0.0.0", port=8050, debug=True)
