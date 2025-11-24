@@ -1,79 +1,74 @@
+import json
+import joblib
+import pandas as pd
+from pathlib import Path
+
 import dash
-from dash import html, dcc, Input, Output, State
-import pandas as pd
-import random
-import pandas as pd
+from dash import dcc, html, dash_table
+from dash.dependencies import Input, Output
 
-df = pd.read_csv("BMW sales data.csv", parse_dates=False)
+import plotly.express as px
 
-modelos = df.Model.unique()
-regiones = df.Region.unique()
-combustibles = df.Fuel_Type.unique()
-transmisiones = df.Transmission.unique()
-colores = df.Color.unique()
+from bmw_model_project import config
 
-# Crear la app Dash
+# Cargar modelo y métricas
+best_model_path = config.TRAINED_DIR / "best_model.joblib"
+best_model = joblib.load(best_model_path)
+
+with open(config.TRAINED_DIR / "best_model_metadata.json") as f:
+    metrics = json.load(f)
+
+# Cargar dataset
+df = pd.read_csv(config.DATA_URL, encoding="utf-8")
+
+# Si tienes funciones para generar features y clustering:
+from bmw_model_project.pipeline import create_features, perform_clustering
+df = create_features(df)
+df = perform_clustering(df)
+
+# Predicciones con el mejor modelo
+numeric_features = ["Year", "Engine_Size_L", "Mileage_KM", "Price_USD", "age_model"]
+categorical_features = ["Region", "Color", "Fuel_Type", "Transmission", "Segmento", "Cluster", "is_luxury"]
+X = df[numeric_features + categorical_features]
+y_true = df["Sales_Volume"].values
+y_pred = best_model.predict(X)
+df["Predicted_Sales"] = y_pred
+
+# Inicializar app
 app = dash.Dash(__name__)
+app.title = "Dashboard BMW Model"
 
-# Layout del tablero
 app.layout = html.Div([
-    html.H1("Tablero de Predicción de Ventas BMW (Demo)"),
-
-    html.Div([
-        html.Label("Modelo"),
-        dcc.Dropdown(id='modelo', options=[{'label': m, 'value': m} for m in modelos], value='X3'),
-    ], style={"margin": "10px"}),
-
-    html.Div([
-        html.Label("Región"),
-        dcc.Dropdown(id='region', options=[{'label': r, 'value': r} for r in regiones], value='Europe'),
-    ], style={"margin": "10px"}),
-
-    html.Div([
-        html.Label("Tipo de combustible"),
-        dcc.Dropdown(id='combustible', options=[{'label': f, 'value': f} for f in combustibles], value='Gasoline'),
-    ], style={"margin": "10px"}),
-
-    html.Div([
-        html.Label("Transmisión"),
-        dcc.Dropdown(id='transmision', options=[{'label': t, 'value': t} for t in transmisiones], value='Automatic'),
-    ], style={"margin": "10px"}),
-
-    html.Div([
-        html.Label("Color"),
-        dcc.Dropdown(id='color', options=[{'label': c, 'value': c} for c in colores], value='Black'),
-    ], style={"margin": "10px"}),
-
-    html.Button("Predecir", id='boton-predecir', n_clicks=0),
+    html.H1("Dashboard Resultados Modelo BMW"),
     
-    html.H2("Predicción:"),
-    html.Div(id='resultado'),
-    html.Div(id='probabilidades')
+    html.Div([
+        html.H3("Mejor modelo:"),
+        html.P(f"{metrics['best_model']}"),
+        html.H4("Métricas:"),
+        html.Ul([
+            html.Li(f"R2: {metrics['r2']:.4f}"),
+            html.Li(f"MSE: {metrics['mse']:.2f}")
+        ])
+    ], style={"margin-bottom": "30px"}),
+
+    html.H3("Predicciones vs Reales"),
+    dcc.Graph(
+        id="scatter-pred-vs-true",
+        figure=px.scatter(df, x="Sales_Volume", y="Predicted_Sales", 
+                          labels={"Sales_Volume": "Ventas Reales", "Predicted_Sales": "Predicciones"},
+                          title="Predicciones vs Ventas Reales")
+    ),
+
+    html.H3("Tabla de predicciones"),
+    dash_table.DataTable(
+        id="table-predictions",
+        columns=[{"name": i, "id": i} for i in df.columns],
+        data=df.to_dict("records"),
+        page_size=10,
+        style_table={"overflowX": "auto"},
+        style_cell={"textAlign": "left"}
+    )
 ])
 
-# Callback para predicción inventada 
-# Esta parte del código simula una predicción y probabilidades
-@app.callback(
-    Output("resultado", "children"),
-    Output("probabilidades", "children"),
-    Input("boton-predecir", "n_clicks"),
-    State("modelo", "value"),
-    State("region", "value"),
-    State("combustible", "value"),
-    State("transmision", "value"),
-    State("color", "value")
-)
-def predecir(n_clicks, modelo, region, combustible, transmision, color):
-    if n_clicks > 0:
-        clases = ['Alta venta', 'Baja venta']
-        prediccion = random.choice(clases)
-        # Probabilidades simuladas (sumen 1)
-        prob = [random.uniform(0,1) for _ in clases]
-        total = sum(prob)
-        prob = [round(p/total,2) for p in prob]
-        prob_text = ", ".join([f"{c}: {p:.2f}" for c,p in zip(clases, prob)])
-        return f"Predicción simulada: {prediccion}", f"Probabilidades simuladas: {prob_text}"
-    return "", ""
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run_server(debug=True)
