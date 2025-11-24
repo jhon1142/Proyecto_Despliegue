@@ -8,14 +8,15 @@ from pathlib import Path
 # ==============================
 # Rutas principales
 # ==============================
-ROOT_DIR = Path(__file__).resolve().parent
-TRAINED_DIR = ROOT_DIR / "trained"
-TRAINED_DIR.mkdir(exist_ok=True)
+
+PACKAGE_ROOT = Path(__file__).resolve().parent
+TRAINED_DIR = PACKAGE_ROOT / "trained"
+DATA_URL = PACKAGE_ROOT / "data" / "data.csv"
 
 # ==============================
 # Fuentes de datos
 # ==============================
-DATA_URL = ROOT_DIR /"data" / "data.csv"
+DATA_URL = PACKAGE_ROOT /"data" / "data.csv"
 
 # ==============================
 # Configuración de Clustering
