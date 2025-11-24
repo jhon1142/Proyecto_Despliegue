@@ -6,3 +6,4 @@ bmw_model_project/bmw_model_project.egg-info/dependency_links.txt
 bmw_model_project/bmw_model_project.egg-info/entry_points.txt
 bmw_model_project/bmw_model_project.egg-info/requires.txt
 bmw_model_project/bmw_model_project.egg-info/top_level.txt
+tests/test_pipeline.py
