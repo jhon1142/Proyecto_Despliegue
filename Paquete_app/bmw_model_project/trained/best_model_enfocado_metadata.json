@@ -1,0 +1,11 @@
+{
+    "best_model_run": "RandomForest_focused_trial_6",
+    "r2": 0.6703446719343258,
+    "mse": 2693716.318422287,
+    "params": {
+        "n_estimators": 250,
+        "max_depth": 10,
+        "min_samples_leaf": 1,
+        "min_samples_split": 8
+    }
+}

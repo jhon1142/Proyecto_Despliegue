@@ -5,7 +5,7 @@ Usa el modelo entrenado para hacer predicciones sobre nuevos datos.
 
 import joblib
 import pandas as pd
-from . import config, pipeline
+from . import config, prediction_pipeline
 
 
 def predict_new(sample_dict):
@@ -16,8 +16,8 @@ def predict_new(sample_dict):
     model = joblib.load(config.TRAINED_DIR / "best_model.joblib")
 
     df_sample = pd.DataFrame([sample_dict])
-    df_sample = pipeline.create_features(df_sample)
-    df_sample = pipeline.perform_clustering(df_sample)
+    df_sample = prediction_pipeline.create_features_for_prediction(df_sample)
+    df_sample = prediction_pipeline.cluster_for_prediction(df_sample)
 
     y_pred = model.predict(df_sample)
     return y_pred

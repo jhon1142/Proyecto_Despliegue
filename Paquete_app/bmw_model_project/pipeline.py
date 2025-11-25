@@ -36,7 +36,13 @@ def load_data():
 def create_features(df):
     """Genera nuevas variables relevantes para el modelo"""
     df["age_model"] = 2024 - df["Year"]
-    df["is_luxury"] = (df["Price_USD"] > df["Price_USD"].quantile(0.75)).astype(int)
+    
+    # Guardar el cuantil para usar en predicción
+    is_luxury_quantile = df["Price_USD"].quantile(0.75)
+    with open(config.TRAINED_DIR / "is_luxury_quantile.json", "w") as f:
+        json.dump({"is_luxury_quantile": is_luxury_quantile}, f)
+        
+    df["is_luxury"] = (df["Price_USD"] > is_luxury_quantile).astype(int)
 
     def clasificar_segmento(ref):
         if pd.isna(ref):
@@ -123,18 +129,23 @@ def train_and_register_model(df):
 
     param_grids = {
         "RandomForest": {
-            "regressor__n_estimators": [100, 200],
-            "regressor__max_depth": [6, 8, 12, None],
+            "regressor__n_estimators": [100, 200, 300, 400],
+            "regressor__max_depth": [6, 8, 12, 20, None],
+            "regressor__min_samples_leaf": [1, 2, 4],
+            "regressor__min_samples_split": [2, 5, 10],
         },
         "XGBoost": {
-            "regressor__n_estimators": [100, 200],
-            "regressor__learning_rate": [0.05, 0.1],
-            "regressor__max_depth": [4, 6, 8],
+            "regressor__n_estimators": [100, 200, 300, 400],
+            "regressor__learning_rate": [0.01, 0.05, 0.1, 0.2],
+            "regressor__max_depth": [4, 6, 8, 10],
+            "regressor__subsample": [0.7, 0.8, 0.9, 1.0],
+            "regressor__colsample_bytree": [0.7, 0.8, 0.9, 1.0],
         },
         "GradientBoosting": {
-            "regressor__n_estimators": [100, 200],
-            "regressor__learning_rate": [0.05, 0.1],
-            "regressor__max_depth": [3, 5],
+            "regressor__n_estimators": [100, 200, 300, 400],
+            "regressor__learning_rate": [0.01, 0.05, 0.1, 0.2],
+            "regressor__max_depth": [3, 5, 8, 10],
+            "regressor__subsample": [0.7, 0.8, 0.9, 1.0],
         },
     }
 
@@ -151,7 +162,7 @@ def train_and_register_model(df):
 
     for name, model in models.items():
         with mlflow.start_run(experiment_id=experiment.experiment_id, run_name=name):
-            search = RandomizedSearchCV(model, param_grids[name], n_iter=5, cv=3, scoring="r2", n_jobs=-1)
+            search = RandomizedSearchCV(model, param_grids[name], n_iter=15, cv=3, scoring="r2", n_jobs=-1)
             search.fit(X_train, y_train)
 
             best_model = search.best_estimator_
