@@ -30,11 +30,17 @@ df = perform_clustering(df)
 numeric_features = ["Year", "Engine_Size_L", "Mileage_KM", "Price_USD", "age_model"]
 categorical_features = ["Region", "Color", "Fuel_Type", "Transmission", "Segmento", "Cluster", "is_luxury"]
 
-# Convertir todas las categóricas a string para scikit-learn 1.7.2
+# Convertir categóricas a string
 df[categorical_features] = df[categorical_features].astype(str)
 
 X = df[numeric_features + categorical_features]
 df["Predicted_Sales"] = best_model.predict(X)
+
+# ================================
+# 2.1 Calcular percentiles para clasificación
+# ================================
+P30 = df["Sales_Volume"].quantile(0.30)
+P70 = df["Sales_Volume"].quantile(0.70)
 
 # ================================
 # 3. Crear app Dash
@@ -191,13 +197,24 @@ def make_prediction(n_clicks, year, engine, mileage, price, age,
         "is_luxury": lux
     }])
 
-    # Forzar string en categóricas
-    input_df[["Region","Color","Fuel_Type","Transmission","Segmento","Cluster","is_luxury"]] = \
-        input_df[["Region","Color","Fuel_Type","Transmission","Segmento","Cluster","is_luxury"]].astype(str)
+    # convertir categóricas
+    cat_cols = ["Region","Color","Fuel_Type","Transmission","Segmento","Cluster","is_luxury"]
+    input_df[cat_cols] = input_df[cat_cols].astype(str)
 
     try:
-        pred = best_model.predict(input_df)[0]
-        return f"Predicción estimada de ventas: {pred:.2f} unidades"
+        pred = float(best_model.predict(input_df)[0])
+
+        # ======== Clasificación LOW / MEDIUM / HIGH ========
+        if pred < P30:
+            classification = "LOW"
+        elif pred < P70:
+            classification = "MEDIUM"
+        else:
+            classification = "HIGH"
+        # ===================================================
+
+        return f"Predicción estimada de ventas: {pred:.2f} unidades — Categoría: {classification}"
+
     except Exception as e:
         return f"Error en predicción: {str(e)}"
 
