@@ -198,8 +198,6 @@ Accuracy: 99.39%
 | **John**      | Líder técnico       | Ingeniería de características, modelos de regresión, MLflow, EC2. | **5**  |
 | **Felipe**      | Analista técnico       | Ingeniería de características, modelos de regresión, MLflow, EC2. | **3**  |
 
-llenar el resto
-
 
 
 - **Total commits:** 10

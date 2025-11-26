@@ -1,0 +1,3 @@
+include README.md
+recursive-include bmw_model_project/trained *
+recursive-include bmw_model_project/data *
